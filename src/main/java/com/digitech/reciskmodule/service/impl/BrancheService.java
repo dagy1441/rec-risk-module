@@ -1,9 +1,11 @@
 package com.digitech.reciskmodule.service.impl;
 
 import com.digitech.reciskmodule.dto.BrancheDto;
+import com.digitech.reciskmodule.model.Alias;
 import com.digitech.reciskmodule.model.Branche;
 import com.digitech.reciskmodule.repository.BrancheRepository;
 import com.digitech.reciskmodule.service.IBrancheService;
+import com.digitech.reciskmodule.service.LoadJsonAndSaveEntity;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -12,16 +14,18 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import javax.persistence.EntityNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class BrancheService implements IBrancheService {
+public class BrancheService implements IBrancheService, LoadJsonAndSaveEntity {
 
     final BrancheRepository brancheRepository;
 
@@ -42,7 +46,26 @@ public class BrancheService implements IBrancheService {
 
     @Override
     public Optional<BrancheDto> findById(String id) {
-        return Optional.empty();
+        BrancheDto dto = new BrancheDto();
+        if (id == null){
+            log.error("Branche ID is null");
+            return null;
+        }
+        Optional<Branche> branche = Optional.ofNullable(brancheRepository.findById(id).orElseThrow(
+                () -> new EntityNotFoundException(
+                        "Branch with ID = " + id + " not found"
+                )
+        ));
+
+        dto.setAlias(branche.get().getAlias());
+        dto.setCode(branche.get().getCode());
+        dto.setParentBranchId(branche.get().getParent_branch_id());
+        dto.setIsParent(branche.get().getIs_parent());
+        dto.setName(branche.get().getName());
+        dto.setStatus(branche.get().getStatus());
+        dto.setType(branche.get().getType());
+
+        return Optional.of(dto);
     }
 
     @Override
@@ -65,16 +88,19 @@ public class BrancheService implements IBrancheService {
         return null;
     }
 
-   public List<Branche> loadJson(Branche entity) {
-       ObjectMapper mapper = new ObjectMapper();
-       TypeReference<List<Branche>> typeReference = new TypeReference<List<Branche>>() {};
-       InputStream inputStream =TypeReference.class.getResourceAsStream("/data/branches.json");
-       try {
+
+    @Override
+    public List loadJsonAndSaveEntity() {
+        ObjectMapper mapper = new ObjectMapper();
+        List<Branche> brancheList = new ArrayList<>();
+        TypeReference<List<Branche>> typeReference = new TypeReference<List<Branche>>() {};
+        InputStream inputStream =TypeReference.class.getResourceAsStream("/data/branches.json");
+        try {
             List<Branche> branches = mapper.readValue(inputStream, typeReference);
-            brancheRepository.saveAll(branches);
-       }catch (IOException ex){
-           log.info("Unable to save branches : " +ex.getMessage());
-       }
-        return null;
+            brancheList= brancheRepository.saveAll(branches);
+        }catch (IOException ex){
+            log.info("Unable to save branches : " +ex.getMessage());
+        }
+        return brancheList;
     }
 }

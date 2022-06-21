@@ -35,4 +35,5 @@ public class RecRisk extends AbstractEntity{
     @JoinColumn(name = "branche_id")
     private Branche branche;
 
+    private Float rec;
 }

@@ -46,5 +46,5 @@ public class CaseNotLifePremium extends AbstractEntity{
     private float prime_net_ceded;
     @ManyToOne
     @JoinColumn(name = "slipes_prime_id")
-    private SlipsPremium Slipes_prime_id;
+    private SlipsPremium slipesPrime;
 }
